@@ -100,16 +100,6 @@ func run() error {
 		cancel()
 	}()
 
-	//var conf *config.FileConf
-	//var err error
-	//
-	//if opts.Config != "" {
-	//      conf, err = config.ParseConf(opts.Config, opts.SaveDir)
-	//      if err != nil {
-	//              return err
-	//      }
-	//}
-
 	return err
 }
 
