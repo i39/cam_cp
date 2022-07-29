@@ -8,11 +8,29 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 )
 
 var opts struct {
-	Config string `short:"c" long:"config" env:"CP_CONFIG_FILE"  description:"config file in YAML format"`
-	Dbg    bool   `long:"dbg" env:"DEBUG" description:"debug mode"`
+	Dbg bool `long:"dbg" env:"DEBUG" description:"debug mode"`
+	Ftp struct {
+		Enabled       bool          `long:"enabled" env:"ENABLED" description:"enable ftp watcher"`
+		Ip            string        `long:"ip" env:"IP" default:"127.0.0.1" description:"ip address of ftp server"`
+		User          string        `long:"user" env:"USER" default:"anonymous" description:"user name"`
+		Password      string        `long:"password" env:"PASSWORD" default:"" description:"user password"`
+		Dir           string        `long:"dir" env:"DIR" default:"/" description:"ftp directory for recursive read"`
+		CheckInterval time.Duration `long:"interval" env:"INTERVAL" default:"3s" description:"ftp check interval"`
+	} `group:"ftp" namespace:"ftp" env-namespace:"FTP"`
+	File struct {
+		Enabled       bool          `long:"enabled" env:"ENABLED" description:"enable file watcher"`
+		Dir           string        `long:"dir" env:"DIR" default:"/tmp" description:"file directory for recursive read"`
+		CheckInterval time.Duration `long:"interval" env:"INTERVAL" default:"3s" description:"file check interval"`
+	} `group:"file" namespace:"file" env-namespace:"FILE"`
+	Http struct {
+		Enabled       bool          `long:"enabled" env:"ENABLED" description:"enable http watcher"`
+		Url           string        `long:"url" env:"URL" default:"http://localhost:8080" description:"http url"`
+		CheckInterval time.Duration `long:"interval" env:"INTERVAL" default:"3s" description:"http check interval"`
+	} `group:"http" namespace:"http" env-namespace:"HTTP"`
 }
 
 var revision = "unknown"
@@ -38,7 +56,8 @@ func main() {
 }
 
 func run() error {
-	ctx, cancel := context.WithCancel(context.Background())
+	var err error
+	_, cancel := context.WithCancel(context.Background())
 
 	go func() {
 		if x := recover(); x != nil {
@@ -54,15 +73,15 @@ func run() error {
 		cancel()
 	}()
 
-	var conf *config.FileConf
-	var err error
-
-	if opts.Config != "" {
-		conf, err = config.ParseConf(opts.Config, opts.SaveDir)
-		if err != nil {
-			return err
-		}
-	}
+	//var conf *config.FileConf
+	//var err error
+	//
+	//if opts.Config != "" {
+	//      conf, err = config.ParseConf(opts.Config, opts.SaveDir)
+	//      if err != nil {
+	//              return err
+	//      }
+	//}
 
 	return err
 }
