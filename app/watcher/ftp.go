@@ -2,8 +2,10 @@ package watcher
 
 import (
 	"context"
+	"fmt"
 	log "github.com/go-pkgz/lgr"
 	"github.com/jlaffaye/ftp"
+	"io/ioutil"
 	"time"
 )
 
@@ -33,14 +35,16 @@ func (f *Ftp) Run(ctx context.Context) error {
 
 //walt thought ftp directory
 
-func (f *Ftp) walkFtp() ([]string, error) {
+func (f *Ftp) walkFtp() (map[string][]byte, error) {
 	var e *ftp.Entry
-	var files []string
+	var r *ftp.Response
+	files := make(map[string][]byte)
+
 	if i := last(f.Ip, ':'); i < 0 {
 		f.Ip += ":21"
 	}
 
-	c, err := ftp.Dial(f.Ip, ftp.DialWithTimeout(time.Second*10))
+	c, err := ftp.Dial(f.Ip, ftp.DialWithTimeout(time.Second*10), ftp.DialWithDisabledEPSV(true))
 	if err != nil {
 		return nil, err
 	}
@@ -56,9 +60,18 @@ func (f *Ftp) walkFtp() ([]string, error) {
 		}
 		e = w.Stat()
 		if e.Type == ftp.EntryTypeFile {
-			files = append(files, w.Path())
+
+			r, err = c.Retr(w.Path())
+			if err != nil {
+				return nil, fmt.Errorf("error reading file %s: %s", w.Path(), err)
+			}
+			files[w.Path()], err = ioutil.ReadAll(r)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
+	defer r.Close()
 
 	return files, nil
 }

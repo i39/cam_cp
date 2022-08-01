@@ -18,9 +18,9 @@ func TestWalkFtp(t *testing.T) {
 	f := &Ftp{
 		Dir:           "/cam_cp/",
 		CheckInterval: time.Second * 10,
-		Ip:            "ftp.dlptest.com",
-		User:          "dlpuser",
-		Password:      "rNrKYTX9g7z3RgJRmxWuGHbeu",
+		Ip:            "192.168.89.236",
+		User:          "ftpuser",
+		Password:      "vad6Udkh",
 	}
 
 	files, err := f.walkFtp()
@@ -28,19 +28,25 @@ func TestWalkFtp(t *testing.T) {
 		t.Error(err)
 	}
 
-	assert.Equal(t, "/cam_cp/test2/test3/test3.txt", files[0])
-	assert.Equal(t, "/cam_cp/test2/test2.txt", files[1])
-	assert.Equal(t, "/cam_cp/test1.txt", files[2])
+	if len(files) != 3 {
+		t.Errorf("expected 3 files, got %d", len(files))
+	}
+
+	for k, _ := range files {
+		assert.Equal(t, "/cam_cp/test2/test3/test3.txt", k)
+		//assert.Equal(t, "test2", files["/cam_cp/test2/test2.txt"])
+		//assert.Equal(t, "test1", files["/cam_cp/test1.txt"])
+	}
 	deleteTestFiles(t)
 }
 
 func createTempFiles(t *testing.T) {
-	c, err := ftp.Dial("ftp.dlptest.com:21", ftp.DialWithTimeout(5*time.Second))
+	c, err := ftp.Dial("192.168.89.236:21", ftp.DialWithTimeout(5*time.Second))
 	if err != nil {
 		t.Error(err)
 	}
 
-	err = c.Login("dlpuser", "rNrKYTX9g7z3RgJRmxWuGHbeu")
+	err = c.Login("ftpuser", "vad6Udkh")
 	if err != nil {
 		t.Error(err)
 	}
