@@ -9,77 +9,92 @@ import (
 	"time"
 )
 
+//use dlptest for testing ftp server
+//https://dlptest.com/ftp-test/ for detailed information
+
+const FtpTestUrl = "ftp.dlptest.com:21"
+const FtpTestDir = "/cam_cp"
+const FtpTestUser = "dlpuser"
+const FtpTestPassword = "rNrKYTX9g7z3RgJRmxWuGHbeu"
+
 func TestWalkFtp(t *testing.T) {
-	//use dlptest for testing ftp server
-	//https://dlptest.com/ftp-test/ for detailed information
 
 	createTempFiles(t)
 
 	f := &Ftp{
-		Dir:           "/cam_cp/",
+		Dir:           FtpTestDir,
 		CheckInterval: time.Second * 10,
-		Ip:            "192.168.89.236",
-		User:          "ftpuser",
-		Password:      "vad6Udkh",
+		Ip:            FtpTestUrl,
+		User:          FtpTestUser,
+		Password:      FtpTestPassword,
+	}
+
+	fl := []Exchange{
+		{
+			Name: FtpTestDir + "/test2/test3/test3.txt",
+			Data: []byte("test3"),
+		},
+		{
+			Name: FtpTestDir + "/test2/test2.txt",
+			Data: []byte("test2"),
+		},
+
+		{
+			Name: FtpTestDir + "/test1.txt",
+			Data: []byte("test1"),
+		},
 	}
 
 	files, err := f.walkFtp()
 	if err != nil {
 		t.Error(err)
 	}
-
-	if len(files) != 3 {
-		t.Errorf("expected 3 files, got %d", len(files))
-	}
-
-	for k, _ := range files {
-		assert.Equal(t, "/cam_cp/test2/test3/test3.txt", k)
-		//assert.Equal(t, "test2", files["/cam_cp/test2/test2.txt"])
-		//assert.Equal(t, "test1", files["/cam_cp/test1.txt"])
-	}
 	deleteTestFiles(t)
+
+	assert.Equal(t, fl, files, "expected %v, got %v", fl, files)
+
 }
 
 func createTempFiles(t *testing.T) {
-	c, err := ftp.Dial("192.168.89.236:21", ftp.DialWithTimeout(5*time.Second))
+	c, err := ftp.Dial(FtpTestUrl, ftp.DialWithTimeout(5*time.Second))
 	if err != nil {
 		t.Error(err)
 	}
 
-	err = c.Login("ftpuser", "vad6Udkh")
+	err = c.Login(FtpTestUser, FtpTestPassword)
 	if err != nil {
 		t.Error(err)
 	}
 
-	err = c.MakeDir("/cam_cp")
+	err = c.MakeDir(FtpTestDir)
 	if err != nil {
 		t.Error(err)
 	}
-	err = c.MakeDir("/cam_cp/test2")
+	err = c.MakeDir(FtpTestDir + "/test2")
 	if err != nil {
 		t.Error(err)
 	}
 
-	err = c.MakeDir("/cam_cp/test2/test3")
+	err = c.MakeDir(FtpTestDir + "/test2/test3")
 	if err != nil {
 		t.Error(err)
 	}
 
 	var data *bytes.Buffer
 	data = bytes.NewBufferString("test1")
-	err = c.Stor("/cam_cp/test1.txt", data)
+	err = c.Stor(FtpTestDir+"/test1.txt", data)
 	if err != nil {
 		t.Error(err)
 	}
 
 	data = bytes.NewBufferString("test2")
-	err = c.Stor("/cam_cp/test2/test2.txt", data)
+	err = c.Stor(FtpTestDir+"/test2/test2.txt", data)
 	if err != nil {
 		t.Error(err)
 	}
 
 	data = bytes.NewBufferString("test3")
-	err = c.Stor("/cam_cp/test2/test3/test3.txt", data)
+	err = c.Stor(FtpTestDir+"/test2/test3/test3.txt", data)
 	if err != nil {
 		t.Error(err)
 	}
@@ -90,17 +105,17 @@ func createTempFiles(t *testing.T) {
 }
 
 func deleteTestFiles(t *testing.T) {
-	c, err := ftp.Dial("ftp.dlptest.com:21", ftp.DialWithTimeout(5*time.Second))
+	c, err := ftp.Dial(FtpTestUrl, ftp.DialWithTimeout(5*time.Second))
 	if err != nil {
 		t.Error(err)
 	}
 
-	err = c.Login("dlpuser", "rNrKYTX9g7z3RgJRmxWuGHbeu")
+	err = c.Login(FtpTestUser, FtpTestPassword)
 	if err != nil {
 		t.Error(err)
 	}
 
-	err = c.RemoveDirRecur("/cam_cp")
+	err = c.RemoveDirRecur(FtpTestDir)
 	if err != nil {
 		t.Error(err)
 	}

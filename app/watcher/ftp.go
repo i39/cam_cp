@@ -2,7 +2,6 @@ package watcher
 
 import (
 	"context"
-	"fmt"
 	log "github.com/go-pkgz/lgr"
 	"github.com/jlaffaye/ftp"
 	"io/ioutil"
@@ -17,40 +16,53 @@ type Ftp struct {
 	Password      string
 }
 
-func (f *Ftp) Run(ctx context.Context) error {
+func NewFtp(ip string, dir string, user string, password string, checkInterval time.Duration) *Ftp {
+	return &Ftp{
+		Dir:           dir,
+		Ip:            ip,
+		User:          user,
+		Password:      password,
+		CheckInterval: checkInterval,
+	}
+}
+
+func (f *Ftp) Run(ctx context.Context, outChan chan []Exchange) error {
+	log.Printf("[INFO] ftp watcher for ip:%s , dir:%s is started", f.Ip, f.Dir)
 	for {
 		select {
 		case <-ctx.Done():
+			log.Printf("[INFO] ftp watcher for ip:%s , dir:%s is stopped", f.Ip, f.Dir)
 			return ctx.Err()
 		case <-time.After(f.CheckInterval):
-			log.Printf("[DEBUG] file watcher: %s", f.Dir)
-			f, err := f.walkFtp()
+			files, err := f.walkFtp()
 			if err != nil {
-				log.Printf("[ERROR] file watcher: %s", err)
+				log.Printf("[ERROR] ftp watcher: %s", err)
 			}
-			log.Printf("[DEBUG] file watcher: %s", f)
+			if len(files) > 0 {
+				outChan <- files
+			}
 		}
 	}
 }
 
 //walt thought ftp directory
 
-func (f *Ftp) walkFtp() (map[string][]byte, error) {
+func (f *Ftp) walkFtp() ([]Exchange, error) {
 	var e *ftp.Entry
 	var r *ftp.Response
-	files := make(map[string][]byte)
+	var files []Exchange
 
 	if i := last(f.Ip, ':'); i < 0 {
 		f.Ip += ":21"
 	}
 
-	c, err := ftp.Dial(f.Ip, ftp.DialWithTimeout(time.Second*10), ftp.DialWithDisabledEPSV(true))
+	c, err := ftp.Dial(f.Ip, ftp.DialWithTimeout(time.Second*10))
 	if err != nil {
-		return nil, err
+		return []Exchange{}, err
 	}
 	err = c.Login(f.User, f.Password)
 	if err != nil {
-		return nil, err
+		return []Exchange{}, err
 	}
 
 	w := c.Walk(f.Dir)
@@ -63,15 +75,24 @@ func (f *Ftp) walkFtp() (map[string][]byte, error) {
 
 			r, err = c.Retr(w.Path())
 			if err != nil {
-				return nil, fmt.Errorf("error reading file %s: %s", w.Path(), err)
+				return []Exchange{}, err
 			}
-			files[w.Path()], err = ioutil.ReadAll(r)
+			var b []byte
+			b, err = ioutil.ReadAll(r)
 			if err != nil {
-				return nil, err
+				return []Exchange{}, err
+			}
+			files = append(files, Exchange{w.Path(), b})
+			err = r.Close()
+			if err != nil {
+				return []Exchange{}, err
+			}
+			err = c.Delete(w.Path())
+			if err != nil {
+				log.Printf("[ERROR] ftp watcher delete error: %s", err)
 			}
 		}
 	}
-	defer r.Close()
 
 	return files, nil
 }

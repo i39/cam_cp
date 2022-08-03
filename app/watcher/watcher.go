@@ -10,3 +10,8 @@ import (
 type Watcher interface {
 	Run(ctx context.Context) error
 }
+
+type Exchange struct {
+	Name string
+	Data []byte
+}
