@@ -22,7 +22,6 @@ func (f *File) Run(ctx context.Context, in watcher.ExChan) error {
 	for {
 		select {
 		case <-ctx.Done():
-			log.Printf("[INFO] file sender for dir:%s is stopped", f.Dir)
 			return ctx.Err()
 		case ex := <-in:
 			f.send(ex)

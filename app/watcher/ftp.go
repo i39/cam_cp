@@ -34,7 +34,6 @@ func (f *Ftp) Run(ctx context.Context, outChan ExChan) error {
 	for {
 		select {
 		case <-ctx.Done():
-			log.Printf("[INFO] ftp watcher for ip:%s , dir:%s is stopped", f.Ip, f.Dir)
 			return ctx.Err()
 		case <-time.After(f.CheckInterval):
 			files, err := f.walkFtp()
