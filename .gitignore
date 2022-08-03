@@ -3,6 +3,7 @@
 access.log
 var/
 dist/
+tmp/
 docker-compose-private.yml
 .vscode
 .idea
