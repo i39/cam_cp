@@ -14,10 +14,6 @@ type File struct {
 }
 
 func NewFile(dir string) *File {
-	//check if directory exist, if not create it
-	if _, err := os.Stat(dir); errors.Is(err, os.ErrNotExist) {
-		os.MkdirAll(dir, 0755)
-	}
 	return &File{Dir: dir}
 }
 
@@ -32,7 +28,7 @@ func (f *File) Run(ctx context.Context, in watcher.ExChan) error {
 			f.send(ex)
 		}
 	}
-	return nil
+
 }
 
 func (f *File) send(ex []watcher.Exchange) {
@@ -48,14 +44,23 @@ func (f *File) send(ex []watcher.Exchange) {
 func (f *File) write(ex watcher.Exchange) error {
 	fBase := filepath.Base(ex.Name)
 	fDir := filepath.Dir(f.Dir + ex.Name)
+	//check if directory exist, if not create it
 	if _, err := os.Stat(fDir); errors.Is(err, os.ErrNotExist) {
-		os.MkdirAll(fDir, 0755)
+		err := os.MkdirAll(fDir, 0755)
+		if err != nil {
+			return err
+		}
 	}
 	file, err := os.Create(filepath.Join(fDir, fBase))
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer func(file *os.File) {
+		err := file.Close()
+		if err != nil {
+			log.Printf("[ERROR] file sender: %s", err)
+		}
+	}(file)
 	_, err = file.Write(ex.Data)
 	if err != nil {
 		return err
