@@ -17,6 +17,9 @@ type Ftp struct {
 }
 
 func NewFtp(ip string, dir string, user string, password string, checkInterval time.Duration) *Ftp {
+	if i := last(ip, ':'); i < 0 {
+		ip += ":21"
+	}
 	return &Ftp{
 		Dir:           dir,
 		Ip:            ip,
@@ -26,7 +29,7 @@ func NewFtp(ip string, dir string, user string, password string, checkInterval t
 	}
 }
 
-func (f *Ftp) Run(ctx context.Context, outChan chan []Exchange) error {
+func (f *Ftp) Run(ctx context.Context, outChan ExChan) error {
 	log.Printf("[INFO] ftp watcher for ip:%s , dir:%s is started", f.Ip, f.Dir)
 	for {
 		select {
@@ -52,17 +55,13 @@ func (f *Ftp) walkFtp() ([]Exchange, error) {
 	var r *ftp.Response
 	var files []Exchange
 
-	if i := last(f.Ip, ':'); i < 0 {
-		f.Ip += ":21"
-	}
-
 	c, err := ftp.Dial(f.Ip, ftp.DialWithTimeout(time.Second*10))
 	if err != nil {
-		return []Exchange{}, err
+		return files, err
 	}
 	err = c.Login(f.User, f.Password)
 	if err != nil {
-		return []Exchange{}, err
+		return files, err
 	}
 
 	w := c.Walk(f.Dir)
@@ -75,17 +74,17 @@ func (f *Ftp) walkFtp() ([]Exchange, error) {
 
 			r, err = c.Retr(w.Path())
 			if err != nil {
-				return []Exchange{}, err
+				return files, err
 			}
 			var b []byte
 			b, err = ioutil.ReadAll(r)
 			if err != nil {
-				return []Exchange{}, err
+				return files, err
 			}
 			files = append(files, Exchange{w.Path(), b})
 			err = r.Close()
 			if err != nil {
-				return []Exchange{}, err
+				return files, err
 			}
 			err = c.Delete(w.Path())
 			if err != nil {
