@@ -38,20 +38,18 @@ func (t *Telegram) Run(ctx context.Context, in watcher.ExChan) (err error) {
 		}
 	}
 }
-func (t *Telegram) send(ex []watcher.Exchange) error {
+func (t *Telegram) send(ex []watcher.Exchange) (err error) {
 	i10 := len(ex) / 10
 	r10 := len(ex) % 10
 	for i := 0; i < i10; i++ {
 		ex10 := ex[i*10 : (i+1)*10]
 		err := t.sendMediaGroup(ex10)
 		if err != nil {
-			log.Printf("[ERROR] telegram sender: %s", err)
 			return err
 		}
 	}
-	err := t.sendMediaGroup(ex[i10*10 : i10*10+r10])
+	err = t.sendMediaGroup(ex[i10*10 : i10*10+r10])
 	if err != nil {
-		log.Printf("[ERROR] telegram sender: %s", err)
 		return err
 	}
 	return nil
@@ -74,7 +72,8 @@ func (t *Telegram) sendMediaGroup(ex []watcher.Exchange) (err error) {
 
 	for _, e := range ex {
 		cnt = append(cnt, content{e.Name, e.Name, e.Data})
-		im = append(im, inputMediaPhoto{Type: "photo", Media: fmt.Sprintf("attach://%s", e.Name)})
+		im = append(im, inputMediaPhoto{Type: "photo",
+			Media: fmt.Sprintf("attach://%s", e.Name)})
 	}
 	if len(cnt) == 0 {
 		return fmt.Errorf("no content to send")
@@ -84,7 +83,6 @@ func (t *Telegram) sendMediaGroup(ex []watcher.Exchange) (err error) {
 
 	res, err = sendPostRequest(url, cnt...)
 	if err != nil {
-		log.Printf("[ERROR] telegram sender: %s, response is: %s", err, res)
 		return err
 	}
 
