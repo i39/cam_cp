@@ -8,6 +8,12 @@ import (
 	log "github.com/go-pkgz/lgr"
 )
 
+type tgResponse struct {
+	Description string `json:"description,omitempty"`
+	ErrorCode   int    `json:"error_code,omitempty"`
+	Ok          bool   `json:"ok"`
+}
+
 type inputMediaPhoto struct {
 	Type  string `json:"type"`
 	Media string `json:"media"`
@@ -25,11 +31,14 @@ func (t *Telegram) Run(ctx context.Context, in watcher.ExChan) (err error) {
 		case <-ctx.Done():
 			return ctx.Err()
 		case ex := <-in:
-			t.send(ex)
+			err := t.send(ex)
+			if err != nil {
+				log.Printf("[ERROR] telegram sender: %s", err)
+			}
 		}
 	}
 }
-func (t *Telegram) send(ex []watcher.Exchange) {
+func (t *Telegram) send(ex []watcher.Exchange) error {
 	i10 := len(ex) / 10
 	r10 := len(ex) % 10
 	for i := 0; i < i10; i++ {
@@ -37,23 +46,25 @@ func (t *Telegram) send(ex []watcher.Exchange) {
 		err := t.sendMediaGroup(ex10)
 		if err != nil {
 			log.Printf("[ERROR] telegram sender: %s", err)
-			return
+			return err
 		}
 	}
 	err := t.sendMediaGroup(ex[i10*10 : i10*10+r10])
 	if err != nil {
 		log.Printf("[ERROR] telegram sender: %s", err)
-		return
+		return err
 	}
+	return nil
 }
 
 // sendMediaGroup send a group of photos or videos as an album.
 func (t *Telegram) sendMediaGroup(ex []watcher.Exchange) (err error) {
 	var (
-		cnt []content
-		im  []inputMediaPhoto
-		jsn []byte
-		res []byte
+		cnt   []content
+		im    []inputMediaPhoto
+		jsn   []byte
+		res   []byte
+		tgres tgResponse
 	)
 	var url = fmt.Sprintf(
 		"%ssendMediaGroup?chat_id=%d",
@@ -63,16 +74,26 @@ func (t *Telegram) sendMediaGroup(ex []watcher.Exchange) (err error) {
 
 	for _, e := range ex {
 		cnt = append(cnt, content{e.Name, e.Name, e.Data})
-		im = append(im, inputMediaPhoto{Type: "photo", Media: e.Name})
+		im = append(im, inputMediaPhoto{Type: "photo", Media: fmt.Sprintf("attach://%s", e.Name)})
+	}
+	if len(cnt) == 0 {
+		return fmt.Errorf("no content to send")
 	}
 	jsn, err = json.Marshal(im)
 	url = fmt.Sprintf("%s&media=%s", url, jsn)
-	if len(cnt) > 0 {
-		res, err = sendPostRequest(url, cnt...)
-		if err != nil {
-			log.Printf("[ERROR] telegram sender: %s, response is: %s", err, res)
-			return err
-		}
+
+	res, err = sendPostRequest(url, cnt...)
+	if err != nil {
+		log.Printf("[ERROR] telegram sender: %s, response is: %s", err, res)
+		return err
+	}
+
+	if err = json.Unmarshal(res, &tgres); err != nil {
+		return err
+	}
+
+	if !tgres.Ok {
+		return fmt.Errorf("telegram error: %s", tgres.Description)
 	}
 
 	return err

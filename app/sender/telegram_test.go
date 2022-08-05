@@ -4,10 +4,17 @@ package sender
 
 import (
 	"bytes"
+	"cam_cp/app/watcher"
 	"encoding/base64"
 	"image"
 	"image/jpeg"
 	"strings"
+	"testing"
+)
+
+var (
+	token  = "5441063131:AAGbIb7_h0fF74Ri52LqDosuUNreP0EWJhs"
+	chatID = int64(2778603)
 )
 
 //Converts pre-existing base64 data (found in example of https://golang.org/pkg/image/#Decode) to test.png
@@ -86,4 +93,37 @@ ubeK6t3gnXdG4wwziiii/UTKMOg6dbzJLFE4dSCP3rEdeOM8805tDsGMvySgSsS6rM6gk9eAcUUVftZt
 	}
 	return buf.Bytes(), nil
 
+}
+
+func TestSend(t *testing.T) {
+
+	tg := &Telegram{
+		Token:  token,
+		ChatId: chatID,
+	}
+
+	data, err := base64toPng()
+	if err != nil {
+		t.Error(err)
+	}
+
+	fl := []watcher.Exchange{
+		{
+			Name: "/test2/test3/test3.png",
+			Data: data,
+		},
+		{
+			Name: "/test2/test2.png",
+			Data: data,
+		},
+
+		{
+			Name: "/test1.png",
+			Data: data,
+		},
+	}
+	err = tg.send(fl)
+	if err != nil {
+		t.Error(err)
+	}
 }
