@@ -18,7 +18,7 @@ type Telegram struct {
 	ChatId int64
 }
 
-func (t *Telegram) Run(ctx context.Context, in watcher.ExChan) error {
+func (t *Telegram) Run(ctx context.Context, in watcher.ExChan) (err error) {
 	log.Printf("[INFO] telegram sender is started")
 	for {
 		select {
