@@ -4,17 +4,12 @@ package sender
 
 import (
 	"bytes"
-	"context"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"path/filepath"
 )
-
-type Sender interface {
-	Run(ctx context.Context) error
-}
 
 // content is a struct which contains a file's name, its type and its data.
 type content struct {
