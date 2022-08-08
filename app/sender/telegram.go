@@ -22,15 +22,24 @@ type inputMediaPhoto struct {
 type Telegram struct {
 	Token  string
 	ChatId int64
+	in     watcher.ExChan
 }
 
-func (t *Telegram) Run(ctx context.Context, in watcher.ExChan) (err error) {
+func NewTelegram(token string, chatId int64) *Telegram {
+	return &Telegram{
+		Token:  token,
+		ChatId: chatId,
+		in:     make(watcher.ExChan),
+	}
+}
+
+func (t *Telegram) Run(ctx context.Context) (err error) {
 	log.Printf("[INFO] telegram sender is started")
 	for {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
-		case ex := <-in:
+		case ex := <-t.in:
 			err := t.send(ex)
 			if err != nil {
 				log.Printf("[ERROR] telegram sender: %s", err)
@@ -38,7 +47,7 @@ func (t *Telegram) Run(ctx context.Context, in watcher.ExChan) (err error) {
 		}
 	}
 }
-func (t *Telegram) send(ex []watcher.Exchange) (err error) {
+func (t *Telegram) send(ex []watcher.ExData) (err error) {
 	i10 := len(ex) / 10
 	r10 := len(ex) % 10
 	for i := 0; i < i10; i++ {
@@ -56,7 +65,7 @@ func (t *Telegram) send(ex []watcher.Exchange) (err error) {
 }
 
 // sendMediaGroup send a group of photos or videos as an album.
-func (t *Telegram) sendMediaGroup(ex []watcher.Exchange) (err error) {
+func (t *Telegram) sendMediaGroup(ex []watcher.ExData) (err error) {
 	var (
 		cnt   []content
 		im    []inputMediaPhoto

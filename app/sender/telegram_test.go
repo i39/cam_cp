@@ -107,7 +107,7 @@ func TestSend(t *testing.T) {
 		t.Error(err)
 	}
 
-	fl := []watcher.Exchange{
+	fl := []watcher.ExData{
 		{
 			Name: "/test2/test3/test3.png",
 			Data: data,

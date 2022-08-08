@@ -29,7 +29,7 @@ func TestWalkFtp(t *testing.T) {
 		Password:      FtpTestPassword,
 	}
 
-	fl := []Exchange{
+	fl := []ExData{
 		{
 			Name: FtpTestDir + "/test2/test3/test3.txt",
 			Data: []byte("test3"),

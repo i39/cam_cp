@@ -11,26 +11,32 @@ import (
 
 type File struct {
 	Dir string
+	in  watcher.ExChan
 }
 
 func NewFile(dir string) *File {
-	return &File{Dir: dir}
+	return &File{Dir: dir,
+		in: make(watcher.ExChan)}
 }
 
-func (f *File) Run(ctx context.Context, in watcher.ExChan) error {
+func (f *File) Run(ctx context.Context) error {
 	log.Printf("[INFO] file sender for dir:%s is started", f.Dir)
 	for {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
-		case ex := <-in:
+		case ex := <-f.in:
 			f.send(ex)
 		}
 	}
 
 }
 
-func (f *File) send(ex []watcher.Exchange) {
+func (f *File) In() watcher.ExChan {
+	return f.in
+}
+
+func (f *File) send(ex []watcher.ExData) {
 	for _, e := range ex {
 		err := f.write(e)
 		if err != nil {
@@ -40,7 +46,7 @@ func (f *File) send(ex []watcher.Exchange) {
 
 }
 
-func (f *File) write(ex watcher.Exchange) error {
+func (f *File) write(ex watcher.ExData) error {
 	fBase := filepath.Base(ex.Name)
 	fDir := filepath.Dir(f.Dir + ex.Name)
 	//check if directory exist, if not create it

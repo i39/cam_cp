@@ -1,9 +1,11 @@
 package main
 
 import (
+	"cam_cp/app/dispatcher"
 	"cam_cp/app/sender"
 	"cam_cp/app/watcher"
 	"context"
+	"errors"
 	"fmt"
 	log "github.com/go-pkgz/lgr"
 	"github.com/umputun/go-flags"
@@ -84,7 +86,16 @@ func main() {
 
 func run() error {
 	var err error
+	var d dispatcher.Impl
+
 	ctx, cancel := context.WithCancel(context.Background())
+	if !opts.In.Ftp.Enabled {
+		return errors.New("no input source enabled")
+	}
+
+	if !opts.Out.File.Enabled {
+		return errors.New("no output source enabled")
+	}
 
 	go func() {
 		if x := recover(); x != nil {
@@ -99,50 +110,59 @@ func run() error {
 		log.Printf("[WARN] interrupt signal")
 		cancel()
 	}()
-	out := make(watcher.ExChan)
+
+	var ftpWatcher watcher.Watcher
 	if opts.In.Ftp.Enabled {
-		runFtpWatcher(ctx, out)
+		if ftpWatcher, err = runFtpWatcher(ctx); err != nil {
+			log.Printf("[ERROR] Run ftp watcher failed, %v", err)
+			return err
+		}
+		d.AddIn(ftpWatcher.Out())
 	}
+	var fileSender sender.Sender
 	if opts.Out.File.Enabled {
-		runFileSender(ctx, out)
+		if fileSender, err = runFileSender(ctx); err != nil {
+			log.Printf("[ERROR] Run file sender failed, %v", err)
+			return err
+		}
+		d.AddOut(fileSender.In())
 	}
 
-	for {
-		select {
-		case <-ctx.Done():
-			log.Printf("[WARN] detect bot stopped")
-			return nil
-			//case exchanges := <-out:
-			//	for _, exchange := range exchanges {
-			//		log.Printf("[INFO] detected %s", exchange.Name)
-			//	}
-		}
-	}
+	//d := dispatcher.NewDispatcher(ftpWatcher.Out(), fileSender.In())
+	d.Run(ctx)
+
+	//for {
+	//	select {
+	//	case <-ctx.Done():
+	//		log.Printf("[WARN] detect bot stopped")
+	//		return nil
+	//		//case exchanges := <-out:
+	//		//	for _, exchange := range exchanges {
+	//		//		log.Printf("[INFO] detected %s", exchange.Name)
+	//		//	}
+	//	}
+	//}
 	return err
 }
 
-func runFtpWatcher(ctx context.Context, out watcher.ExChan) {
-	f := watcher.NewFtp(opts.In.Ftp.Ip, opts.In.Ftp.Dir,
+func runFtpWatcher(ctx context.Context) (w watcher.Watcher, err error) {
+	//var f watcher.Watcher
+	w = watcher.NewFtp(opts.In.Ftp.Ip, opts.In.Ftp.Dir,
 		opts.In.Ftp.User, opts.In.Ftp.Password,
 		opts.In.Ftp.CheckInterval)
 
 	go func() {
-		err := f.Run(ctx, out)
-		if err != nil {
-			log.Printf("[ERROR] Run ftp watcher failed, %v", err)
-		}
+		err = w.Run(ctx)
 	}()
-
+	return w, err
 }
 
-func runFileSender(ctx context.Context, out watcher.ExChan) {
+func runFileSender(ctx context.Context) (s sender.Sender, err error) {
 	f := sender.NewFile(opts.Out.File.Dir)
 	go func() {
-		err := f.Run(ctx, out)
-		if err != nil {
-			log.Printf("[ERROR] Run file sender failed, %v", err)
-		}
+		err = f.Run(ctx)
 	}()
+	return f, err
 }
 
 func setupLog(dbg bool) {

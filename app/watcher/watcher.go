@@ -3,9 +3,18 @@
 
 package watcher
 
-type Exchange struct {
+import (
+	"context"
+)
+
+type ExData struct {
 	Name string
 	Data []byte
 }
 
-type ExChan chan []Exchange
+type ExChan chan []ExData
+
+type Watcher interface {
+	Run(ctx context.Context) error
+	Out() ExChan
+}
