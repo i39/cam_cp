@@ -9,5 +9,8 @@ build: info
 race_test:
 	cd app && go test -v -race -mod=vendor -timeout=120s -count 1 ./...
 
+test:
+	cd app && go test -v  -mod=vendor -timeout=120s -count 1 ./...
+
 info:
 	- @echo "revision $(REV)"

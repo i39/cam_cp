@@ -5,7 +5,6 @@ import (
 	"context"
 	"github.com/stretchr/testify/assert"
 	"testing"
-	"time"
 )
 
 func TestNewDispatcher(t *testing.T) {
@@ -41,30 +40,24 @@ func TestNewDispatcher(t *testing.T) {
 	d.AddOut(outChan1)
 	d.AddOut(outChan2)
 	d.AddOut(outChan3)
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx := context.Background()
 	go d.Run(ctx)
 
 	go func() {
-		time.Sleep(time.Second * 1)
 		d.in[0] <- fl
 		d.in[1] <- fl
 		d.in[2] <- fl
 	}()
 
-	var o1, o2, o3 []watcher.ExData
-
-	go func() {
-		time.Sleep(time.Second * 2)
-		o1 = <-d.out[0]
-		o2 = <-d.out[1]
-		o3 = <-d.out[2]
+	res := func() [][]watcher.ExData {
+		var res [][]watcher.ExData
+		res = append(res, <-d.out[0])
+		res = append(res, <-d.out[1])
+		res = append(res, <-d.out[2])
+		return res
 	}()
 
-	time.Sleep(time.Second * 5)
-	assert.Equal(t, fl, o1, "expected %v, got %v", fl, o1)
-	assert.Equal(t, fl, o2, "expected %v, got %v", fl, o2)
-	assert.Equal(t, fl, o3, "expected %v, got %v", fl, o3)
-
-	cancel()
-
+	assert.Equal(t, fl, res[0], "expected %v, got %v", fl, res[0])
+	assert.Equal(t, fl, res[1], "expected %v, got %v", fl, res[1])
+	assert.Equal(t, fl, res[2], "expected %v, got %v", fl, res[2])
 }
