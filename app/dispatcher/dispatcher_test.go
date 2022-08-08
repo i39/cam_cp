@@ -41,7 +41,12 @@ func TestNewDispatcher(t *testing.T) {
 	d.AddOut(outChan2)
 	d.AddOut(outChan3)
 	ctx := context.Background()
-	go d.Run(ctx)
+	go func() {
+		err := d.Run(ctx)
+		if err != nil {
+			t.Error(err)
+		}
+	}()
 
 	go func() {
 		d.in[0] <- fl
