@@ -24,15 +24,11 @@ type Predictions struct {
 	Y_max      int     `json:"y_max"`
 	X_max      int     `json:"x_max"`
 }
-type Responce struct {
+type OdResponce struct {
 	Ok          bool          `json:"success"`
 	Error       string        `json:"error"`
 	Duration    int           `json:"duration"`
 	Predictions []Predictions `json:"predictions"`
-}
-
-type inputMedia struct {
-	Image string `json:"image"`
 }
 
 func NewDeepstack(url, apiKey string) *Deepstack {
@@ -70,7 +66,7 @@ func (f *Deepstack) send(ex []watcher.ExData) {
 
 func (f *Deepstack) detect(ex watcher.ExData) (pr []Predictions, err error) {
 	var cnt = http_utils.Content{Fname: ex.Name, Ftype: "image", Fdata: ex.Data}
-	var dsRes Responce
+	var dsRes OdResponce
 	res, err := http_utils.SendPostRequest(f.Url, cnt)
 	if err != nil {
 		return pr, err

@@ -1,6 +1,7 @@
 package sender
 
 import (
+	"cam_cp/app/http_utils"
 	"cam_cp/app/watcher"
 	"context"
 	"encoding/json"
@@ -67,7 +68,7 @@ func (t *Telegram) send(ex []watcher.ExData) (err error) {
 // sendMediaGroup send a group of photos or videos as an album.
 func (t *Telegram) sendMediaGroup(ex []watcher.ExData) (err error) {
 	var (
-		cnt   []content
+		cnt   []http_utils.Content
 		im    []inputMediaPhoto
 		jsn   []byte
 		res   []byte
@@ -80,7 +81,7 @@ func (t *Telegram) sendMediaGroup(ex []watcher.ExData) (err error) {
 	)
 
 	for _, e := range ex {
-		cnt = append(cnt, content{e.Name, e.Name, e.Data})
+		cnt = append(cnt, http_utils.Content{Fname: e.Name, Ftype: e.Name, Fdata: e.Data})
 		im = append(im, inputMediaPhoto{Type: "photo",
 			Media: fmt.Sprintf("attach://%s", e.Name)})
 	}
@@ -90,7 +91,7 @@ func (t *Telegram) sendMediaGroup(ex []watcher.ExData) (err error) {
 	jsn, err = json.Marshal(im)
 	url = fmt.Sprintf("%s&media=%s", url, jsn)
 
-	res, err = sendPostRequest(url, cnt...)
+	res, err = http_utils.SendPostRequest(url, cnt...)
 	if err != nil {
 		return err
 	}
