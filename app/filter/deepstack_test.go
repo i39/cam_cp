@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"cam_cp/app/watcher"
 	"encoding/base64"
+	"github.com/stretchr/testify/assert"
 	"image"
 	"image/jpeg"
 	"strings"
@@ -89,6 +90,42 @@ ubeK6t3gnXdG4wwziiii/UTKMOg6dbzJLFE4dSCP3rEdeOM8805tDsGMvySgSsS6rM6gk9eAcUUVftZt
 }
 
 func TestDeepstackDetect(t *testing.T) {
+
+	prediction := []Predictions{
+		{
+			Label:      "person",
+			Confidence: 0.41992188,
+			Y_min:      89,
+			X_min:      103,
+			Y_max:      103,
+			X_max:      134,
+		},
+		{
+			Label:      "refrigerator",
+			Confidence: 0.42407227,
+			Y_min:      71,
+			X_min:      33,
+			Y_max:      103,
+			X_max:      111,
+		},
+		{
+			Label:      "person",
+			Confidence: 0.86279297,
+			Y_min:      11,
+			X_min:      91,
+			Y_max:      101,
+			X_max:      150,
+		},
+		{
+			Label:      "person",
+			Confidence: 0.8930664,
+			Y_min:      15,
+			X_min:      0,
+			Y_max:      102,
+			X_max:      56,
+		},
+	}
+
 	data, err := base64toPng()
 	if err != nil {
 		t.Error(err)
@@ -101,7 +138,6 @@ func TestDeepstackDetect(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	t.Log(pr)
 
-	//assert.Equal(t, true, res)
+	assert.Equal(t, pr, prediction, "expected %v, got %v", prediction, pr)
 }
