@@ -8,13 +8,10 @@ import (
 	"encoding/base64"
 	"image"
 	"image/jpeg"
+	"os"
+	"strconv"
 	"strings"
 	"testing"
-)
-
-var (
-	token  = "5441063131:AAGbIb7_h0fF74Ri52LqDosuUNreP0EWJhs"
-	chatID = int64(2778603)
 )
 
 //Converts pre-existing base64 data (found in example of https://golang.org/pkg/image/#Decode) to test.png
@@ -96,6 +93,14 @@ ubeK6t3gnXdG4wwziiii/UTKMOg6dbzJLFE4dSCP3rEdeOM8805tDsGMvySgSsS6rM6gk9eAcUUVftZt
 }
 
 func TestSend(t *testing.T) {
+
+	var (
+		token       = os.Getenv("TG_TOKEN")
+		chatID, err = strconv.ParseInt(os.Getenv("TG_CHAT_ID"), 10, 64)
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	tg := &Telegram{
 		Token:  token,

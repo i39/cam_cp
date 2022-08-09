@@ -90,10 +90,12 @@ func run() error {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	if !opts.In.Ftp.Enabled {
+		cancel()
 		return errors.New("no input source enabled")
 	}
 
 	if !opts.Out.File.Enabled {
+		cancel()
 		return errors.New("no output source enabled")
 	}
 
@@ -128,8 +130,11 @@ func run() error {
 		d.AddOut(fileSender.In())
 	}
 
-	//d := dispatcher.NewDispatcher(ftpWatcher.Out(), fileSender.In())
-	d.Run(ctx)
+	err = d.Run(ctx)
+	if err != nil {
+		cancel()
+		return err
+	}
 
 	//for {
 	//	select {
