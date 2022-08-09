@@ -1,8 +1,11 @@
 package filter
 
 import (
+	"cam_cp/app/http_utils"
 	"cam_cp/app/watcher"
 	"context"
+	"encoding/json"
+	"fmt"
 	log "github.com/go-pkgz/lgr"
 )
 
@@ -11,6 +14,25 @@ type Deepstack struct {
 	out    watcher.ExChan
 	Url    string
 	ApiKey string
+}
+
+type Predictions struct {
+	Label      string  `json:"label"`
+	Confidence float64 `json:"confidence"`
+	Y_min      int     `json:"y_min"`
+	X_min      int     `json:"x_min"`
+	Y_max      int     `json:"y_max"`
+	X_max      int     `json:"x_max"`
+}
+type Responce struct {
+	Ok          bool          `json:"success"`
+	Error       string        `json:"error"`
+	Duration    int           `json:"duration"`
+	Predictions []Predictions `json:"predictions"`
+}
+
+type inputMedia struct {
+	Image string `json:"image"`
 }
 
 func NewDeepstack(url, apiKey string) *Deepstack {
@@ -39,13 +61,28 @@ func (f *Deepstack) Out() watcher.ExChan {
 
 func (f *Deepstack) send(ex []watcher.ExData) {
 	for _, e := range ex {
-		err := f.detect(e)
+		_, err := f.detect(e)
 		if err != nil {
 			log.Printf("[ERROR] deepstack filter: %s", err)
 		}
 	}
 }
 
-func (f *Deepstack) detect(ex watcher.ExData) error {
-	return nil
+func (f *Deepstack) detect(ex watcher.ExData) (pr []Predictions, err error) {
+	var cnt = http_utils.Content{Fname: ex.Name, Ftype: "image", Fdata: ex.Data}
+	var dsRes Responce
+	res, err := http_utils.SendPostRequest(f.Url, cnt)
+	if err != nil {
+		return pr, err
+	}
+
+	if err = json.Unmarshal(res, &dsRes); err != nil {
+		return pr, err
+	}
+
+	if !dsRes.Ok {
+		return pr, fmt.Errorf("deepstack error: %s", dsRes.Error)
+	}
+	pr = dsRes.Predictions
+	return pr, nil
 }
