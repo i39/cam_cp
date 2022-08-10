@@ -92,6 +92,7 @@ func run() error {
 	var err error
 	var dIn dispatcher.Impl
 	var dOut dispatcher.Impl
+	// Watchers(out)->(in)dIn(out)->(in)Filter(out)->(in)dOut(out)->(in)Senders
 
 	ctx, cancel := context.WithCancel(context.Background())
 	if !opts.In.Ftp.Enabled {
