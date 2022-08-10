@@ -2,9 +2,11 @@ package watcher
 
 import (
 	"context"
+	"fmt"
 	log "github.com/go-pkgz/lgr"
 	"github.com/jlaffaye/ftp"
 	"io/ioutil"
+	"net"
 	"time"
 )
 
@@ -17,11 +19,18 @@ type Ftp struct {
 	out           ExChan
 }
 
-func NewFtp(ip string, dir string, user string, password string, checkInterval time.Duration) *Ftp {
+func NewFtp(ip string, dir string, user string,
+	password string, checkInterval time.Duration) (f *Ftp, err error) {
+
+	if r := net.ParseIP(ip); r == nil {
+		return nil, fmt.Errorf("invalid ip: %s", ip)
+	}
+
 	if i := last(ip, ':'); i < 0 {
 		ip += ":21"
 	}
-	return &Ftp{
+
+	f = &Ftp{
 		Dir:           dir,
 		Ip:            ip,
 		User:          user,
@@ -29,6 +38,7 @@ func NewFtp(ip string, dir string, user string, password string, checkInterval t
 		CheckInterval: checkInterval,
 		out:           make(ExChan),
 	}
+	return f, nil
 }
 
 func (f *Ftp) Run(ctx context.Context) error {

@@ -7,13 +7,16 @@ import (
 	"encoding/json"
 	"fmt"
 	log "github.com/go-pkgz/lgr"
+	"strings"
 )
 
 type Deepstack struct {
-	in     watcher.ExChan
-	out    watcher.ExChan
-	Url    string
-	ApiKey string
+	in         watcher.ExChan
+	out        watcher.ExChan
+	Url        string
+	ApiKey     string
+	Labels     []string
+	Confidence float64
 }
 
 type Predictions struct {
@@ -31,8 +34,12 @@ type OdResponce struct {
 	Predictions []Predictions `json:"predictions"`
 }
 
-func NewDeepstack(url, apiKey string) *Deepstack {
-	return &Deepstack{Url: url, ApiKey: apiKey, in: make(watcher.ExChan), out: make(watcher.ExChan)}
+func NewDeepstack(url, apiKey string, labels string, confidence float64) (d *Deepstack, err error) {
+	lbs := strings.Split(labels, ",")
+	d = &Deepstack{Url: url, ApiKey: apiKey,
+		Labels: lbs, Confidence: confidence,
+		in: make(watcher.ExChan), out: make(watcher.ExChan)}
+	return d, nil
 }
 
 func (f *Deepstack) Run(ctx context.Context) error {
@@ -56,12 +63,23 @@ func (f *Deepstack) Out() watcher.ExChan {
 }
 
 func (f *Deepstack) send(ex []watcher.ExData) {
+	var out []watcher.ExData
 	for _, e := range ex {
-		_, err := f.detect(e)
+		predictions, err := f.detect(e)
 		if err != nil {
 			log.Printf("[ERROR] deepstack filter: %s", err)
+			continue
 		}
+		for _, p := range predictions {
+			for _, l := range f.Labels {
+				if p.Label == l && p.Confidence > f.Confidence {
+					out = append(out, e)
+				}
+			}
+		}
+
 	}
+	f.out <- out
 }
 
 func (f *Deepstack) detect(ex watcher.ExData) (pr []Predictions, err error) {

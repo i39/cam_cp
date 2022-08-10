@@ -7,28 +7,51 @@ import (
 	"sync"
 )
 
+// Dispatcher copy all incoming events to all outgoing channels
 type Dispatcher interface {
 	Run(ctx context.Context) error
 }
 
+// Impl is implementation of Dispatcher
 type Impl struct {
 	sync.Mutex
 	in  []watcher.ExChan
 	out []watcher.ExChan
 }
 
-func (d *Impl) AddIn(in watcher.ExChan) {
+// AddIn adds incoming channel to dispatcher
+func (d *Impl) AddIn(in ...watcher.ExChan) {
 	d.Lock()
 	defer d.Unlock()
-	d.in = append(d.in, in)
+	for _, i := range in {
+		d.in = append(d.in, i)
+	}
 }
 
-func (d *Impl) AddOut(out watcher.ExChan) {
+// AddOut adds outgoing channel to dispatcher
+func (d *Impl) AddOut(out ...watcher.ExChan) {
 	d.Lock()
 	defer d.Unlock()
-	d.out = append(d.out, out)
+	for _, o := range out {
+		d.out = append(d.out, o)
+	}
 }
 
+// GetIn returns incoming channels
+func (d *Impl) GetIn() []watcher.ExChan {
+	d.Lock()
+	defer d.Unlock()
+	return d.in
+}
+
+//GetOut returns outgoing channels
+func (d *Impl) GetOut() []watcher.ExChan {
+	d.Lock()
+	defer d.Unlock()
+	return d.out
+}
+
+// Run starts dispatcher
 func (d *Impl) Run(ctx context.Context) error {
 	log.Printf("[INFO] dispatcher is started")
 	for {

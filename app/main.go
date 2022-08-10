@@ -2,6 +2,7 @@ package main
 
 import (
 	"cam_cp/app/dispatcher"
+	"cam_cp/app/filter"
 	"cam_cp/app/sender"
 	"cam_cp/app/watcher"
 	"context"
@@ -37,8 +38,11 @@ var opts struct {
 	} `group:"in" namespace:"in" env-namespace:"IN"`
 	Filter struct {
 		Deepstack struct {
-			Url    string `long:"url" env:"URL" default:"http://localhost:8080" description:"deepstack url"`
-			ApiKey string `long:"api-key" env:"API_KEY" default:"" description:"deepstack api key"`
+			Enabled    bool    `long:"enabled" env:"ENABLED"  description:"enable deepstack filter"`
+			Url        string  `long:"url" env:"URL" default:"http://localhost:8080" description:"deepstack url"`
+			ApiKey     string  `long:"api-key" env:"API_KEY" default:"" description:"deepstack api key"`
+			Confidence float64 `long:"confidence" env:"CONFIDENCE" default:"0.5" description:"confidence level"`
+			Labels     string  `long:"labels" env:"LABELS" default:"person" description:"comma separated labels to detect"`
 		} `group:"deepstack" namespace:"deepstack" env-namespace:"DEEPSTACK"`
 	} `group:"filter" namespace:"filter" env-namespace:"FILTER"`
 	Out struct {
@@ -86,7 +90,9 @@ func main() {
 
 func run() error {
 	var err error
-	var d dispatcher.Impl
+	var dIn dispatcher.Impl
+	var dOut dispatcher.Impl
+	//var dF dispatcher.Impl
 
 	ctx, cancel := context.WithCancel(context.Background())
 	if !opts.In.Ftp.Enabled {
@@ -119,42 +125,65 @@ func run() error {
 			log.Printf("[ERROR] Run ftp watcher failed, %v", err)
 			return err
 		}
-		d.AddIn(ftpWatcher.Out())
+		// Add to Input dispatcher files from ftp
+		dIn.AddIn(ftpWatcher.Out())
 	}
+
+	var deepstackFilter filter.Filter
+	if opts.Filter.Deepstack.Enabled {
+		if deepstackFilter, err = runDeepstackFilter(ctx); err != nil {
+			log.Printf("[ERROR] Run deepstack filter failed, %v", err)
+			return err
+		}
+		// Output files from Input dispatcher to Deepstack filter
+		dIn.AddOut(deepstackFilter.In())
+	}
+	// Output files from Deepstack filter to Output dispatcher
+	dOut.AddIn(deepstackFilter.Out())
+
 	var fileSender sender.Sender
 	if opts.Out.File.Enabled {
 		if fileSender, err = runFileSender(ctx); err != nil {
 			log.Printf("[ERROR] Run file sender failed, %v", err)
 			return err
 		}
-		d.AddOut(fileSender.In())
+		// Output files from Deepstack filter to File sender
+		dOut.AddOut(fileSender.In())
 	}
+	go func() {
+		err = dIn.Run(ctx)
+	}()
 
-	err = d.Run(ctx)
 	if err != nil {
 		cancel()
 		return err
 	}
 
-	//for {
-	//	select {
-	//	case <-ctx.Done():
-	//		log.Printf("[WARN] detect bot stopped")
-	//		return nil
-	//		//case exchanges := <-out:
-	//		//	for _, exchange := range exchanges {
-	//		//		log.Printf("[INFO] detected %s", exchange.Name)
-	//		//	}
-	//	}
-	//}
-	return err
+	go func() {
+		err = dOut.Run(ctx)
+	}()
+
+	if err != nil {
+		cancel()
+		return err
+	}
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		}
+	}
+
 }
 
 func runFtpWatcher(ctx context.Context) (w watcher.Watcher, err error) {
 	//var f watcher.Watcher
-	w = watcher.NewFtp(opts.In.Ftp.Ip, opts.In.Ftp.Dir,
+	w, err = watcher.NewFtp(opts.In.Ftp.Ip, opts.In.Ftp.Dir,
 		opts.In.Ftp.User, opts.In.Ftp.Password,
 		opts.In.Ftp.CheckInterval)
+	if err != nil {
+		return nil, err
+	}
 
 	go func() {
 		err = w.Run(ctx)
@@ -163,7 +192,23 @@ func runFtpWatcher(ctx context.Context) (w watcher.Watcher, err error) {
 }
 
 func runFileSender(ctx context.Context) (s sender.Sender, err error) {
-	f := sender.NewFile(opts.Out.File.Dir)
+	s, err = sender.NewFile(opts.Out.File.Dir)
+	if err != nil {
+		return nil, err
+	}
+	go func() {
+		err = s.Run(ctx)
+	}()
+	return s, err
+}
+
+func runDeepstackFilter(ctx context.Context) (f filter.Filter, err error) {
+	f, err = filter.NewDeepstack(opts.Filter.Deepstack.Url,
+		opts.Filter.Deepstack.ApiKey, opts.Filter.Deepstack.Labels,
+		opts.Filter.Deepstack.Confidence)
+	if err != nil {
+		return nil, err
+	}
 	go func() {
 		err = f.Run(ctx)
 	}()

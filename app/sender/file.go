@@ -14,9 +14,18 @@ type File struct {
 	in  watcher.ExChan
 }
 
-func NewFile(dir string) *File {
-	return &File{Dir: dir,
+func NewFile(dir string) (f *File, err error) {
+	//check if directory exist, if not create it
+	if _, err = os.Stat(dir); errors.Is(err, os.ErrNotExist) {
+		err = os.MkdirAll(dir, 0755)
+		if err != nil {
+			return f, err
+		}
+	}
+	f = &File{Dir: dir,
 		in: make(watcher.ExChan)}
+
+	return f, nil
 }
 
 func (f *File) Run(ctx context.Context) error {
