@@ -92,6 +92,10 @@ func run() error {
 	var err error
 	var dIn dispatcher.Impl
 	var dOut dispatcher.Impl
+	// TODO:
+	// Сделать один дипетчер для фильтра и добавить на вход все входные данные
+	// а на выход выходные. То есть dF.AddIn(ftpWatcher.Out())
+	// dF.AdddOut(fileSender.In())
 	//var dF dispatcher.Impl
 
 	ctx, cancel := context.WithCancel(context.Background())
