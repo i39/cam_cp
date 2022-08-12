@@ -32,7 +32,7 @@ func TestNewDispatcher(t *testing.T) {
 	outChan2 := make(watcher.ExChan)
 	outChan3 := make(watcher.ExChan)
 
-	var d Impl
+	var d Dispatcher
 	d.AddIn(inChan1)
 	d.AddIn(inChan2)
 	d.AddIn(inChan3)

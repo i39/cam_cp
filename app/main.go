@@ -90,8 +90,8 @@ func main() {
 
 func run() error {
 	var err error
-	var dIn dispatcher.Impl
-	var dOut dispatcher.Impl
+	var dIn dispatcher.Dispatcher
+	var dOut dispatcher.Dispatcher
 	// Watchers(out)->(in)dIn(out)->(in)Filter(out)->(in)dOut(out)->(in)Senders
 
 	ctx, cancel := context.WithCancel(context.Background())
