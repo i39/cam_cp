@@ -137,9 +137,9 @@ func run() error {
 		}
 		// Output files from Input dispatcher to Deepstack filter
 		dIn.AddOut(deepstackFilter.In())
+		// Output files from Deepstack filter to Output dispatcher
+		dOut.AddIn(deepstackFilter.Out())
 	}
-	// Output files from Deepstack filter to Output dispatcher
-	dOut.AddIn(deepstackFilter.Out())
 
 	var fileSender sender.Sender
 	if opts.Out.File.Enabled {
