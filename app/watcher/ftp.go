@@ -1,6 +1,7 @@
 package watcher
 
 import (
+	"cam_cp/app/frame"
 	"context"
 	"fmt"
 	log "github.com/go-pkgz/lgr"
@@ -16,7 +17,6 @@ type Ftp struct {
 	Ip            string
 	User          string
 	Password      string
-	out           ExChan
 }
 
 func NewFtp(ip string, dir string, user string,
@@ -36,13 +36,11 @@ func NewFtp(ip string, dir string, user string,
 		User:          user,
 		Password:      password,
 		CheckInterval: checkInterval,
-		out:           make(ExChan),
 	}
 	return f, nil
 }
 
-func (f *Ftp) Run(ctx context.Context) error {
-	log.Printf("[INFO] ftp watcher for ip:%s , dir:%s is started", f.Ip, f.Dir)
+func (f *Ftp) Watch(ctx context.Context, frames chan<- []frame.Frame) error {
 	for {
 		select {
 		case <-ctx.Done():
@@ -51,24 +49,19 @@ func (f *Ftp) Run(ctx context.Context) error {
 			files, err := f.walkFtp()
 			if err != nil {
 				log.Printf("[ERROR] ftp watcher: %s", err)
+				continue
 			}
-			if len(files) > 0 {
-				f.out <- files
-			}
+			frames <- files
+
 		}
 	}
 }
 
-func (f *Ftp) Out() ExChan {
-	return f.out
-}
-
 //walt thought ftp directory
 
-func (f *Ftp) walkFtp() ([]ExData, error) {
+func (f *Ftp) walkFtp() (files []frame.Frame, err error) {
 	var e *ftp.Entry
 	var r *ftp.Response
-	var files []ExData
 
 	c, err := ftp.Dial(f.Ip, ftp.DialWithTimeout(time.Second*10))
 	if err != nil {
@@ -96,7 +89,7 @@ func (f *Ftp) walkFtp() ([]ExData, error) {
 			if err != nil {
 				return files, err
 			}
-			files = append(files, ExData{w.Path(), b})
+			files = append(files, frame.Frame{Name: w.Path(), Data: b})
 			err = r.Close()
 			if err != nil {
 				return files, err

@@ -1,8 +1,7 @@
 package sender
 
 import (
-	"cam_cp/app/watcher"
-	"context"
+	"cam_cp/app/frame"
 	"errors"
 	"log"
 	"os"
@@ -11,7 +10,6 @@ import (
 
 type File struct {
 	Dir string
-	in  watcher.ExChan
 }
 
 func NewFile(dir string) (f *File, err error) {
@@ -22,42 +20,25 @@ func NewFile(dir string) (f *File, err error) {
 			return f, err
 		}
 	}
-	f = &File{Dir: dir,
-		in: make(watcher.ExChan)}
+	f = &File{Dir: dir}
 
 	return f, nil
 }
 
-func (f *File) Run(ctx context.Context) error {
-	log.Printf("[INFO] file sender for dir:%s is started", f.Dir)
-	for {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case ex := <-f.in:
-			f.send(ex)
-		}
-	}
-
-}
-
-func (f *File) In() watcher.ExChan {
-	return f.in
-}
-
-func (f *File) send(ex []watcher.ExData) {
-	for _, e := range ex {
-		err := f.write(e)
+// Send sends frames to file system
+func (f *File) Send(frames []frame.Frame) (err error) {
+	for _, fr := range frames {
+		err := f.write(fr)
 		if err != nil {
 			log.Printf("[ERROR] file sender: %s", err)
 		}
 	}
-
+	return nil
 }
 
-func (f *File) write(ex watcher.ExData) error {
-	fBase := filepath.Base(ex.Name)
-	fDir := filepath.Dir(f.Dir + ex.Name)
+func (f *File) write(file frame.Frame) error {
+	fBase := filepath.Base(file.Name)
+	fDir := filepath.Dir(f.Dir + file.Name)
 	//check if directory exist, if not create it
 	if _, err := os.Stat(fDir); errors.Is(err, os.ErrNotExist) {
 		err := os.MkdirAll(fDir, 0755)
@@ -65,7 +46,7 @@ func (f *File) write(ex watcher.ExData) error {
 			return err
 		}
 	}
-	file, err := os.Create(filepath.Join(fDir, fBase))
+	newFile, err := os.Create(filepath.Join(fDir, fBase))
 	if err != nil {
 		return err
 	}
@@ -74,8 +55,8 @@ func (f *File) write(ex watcher.ExData) error {
 		if err != nil {
 			log.Printf("[ERROR] file sender: %s", err)
 		}
-	}(file)
-	_, err = file.Write(ex.Data)
+	}(newFile)
+	_, err = newFile.Write(file.Data)
 	if err != nil {
 		return err
 	}

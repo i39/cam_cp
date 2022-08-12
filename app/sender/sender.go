@@ -3,11 +3,9 @@ package sender
 //https://github.com/NicoNex/echotron/
 
 import (
-	"cam_cp/app/watcher"
-	"context"
+	"cam_cp/app/frame"
 )
 
 type Sender interface {
-	Run(ctx context.Context) error
-	In() watcher.ExChan
+	Send(frames []frame.Frame) error
 }

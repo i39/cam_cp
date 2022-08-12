@@ -2,6 +2,7 @@ package watcher
 
 import (
 	"bytes"
+	"cam_cp/app/frame"
 	"github.com/jlaffaye/ftp"
 	"github.com/stretchr/testify/assert"
 	"log"
@@ -29,7 +30,7 @@ func TestWalkFtp(t *testing.T) {
 		Password:      FtpTestPassword,
 	}
 
-	fl := []ExData{
+	fl := []frame.Frame{
 		{
 			Name: FtpTestDir + "/test2/test3/test3.txt",
 			Data: []byte("test3"),

@@ -4,17 +4,10 @@
 package watcher
 
 import (
+	"cam_cp/app/frame"
 	"context"
 )
 
-type ExData struct {
-	Name string
-	Data []byte
-}
-
-type ExChan chan []ExData
-
 type Watcher interface {
-	Run(ctx context.Context) error
-	Out() ExChan
+	Watch(ctx context.Context, frames chan<- []frame.Frame) error
 }
