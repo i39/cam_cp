@@ -13,7 +13,7 @@ WORKDIR /build
 RUN apk add --no-cache --update git tzdata
 
 RUN \
-    version=${GIT_BRANCH}-${GITHUB_SHA:0:7}-$(date +%Y%m%dT%H:%M:%S); fi && \
+    version=${GIT_BRANCH}-${GITHUB_SHA:0:7}-$(date +%Y%m%dT%H:%M:%S) && \
     echo "version=$version" && \
     cd app && go build -o /build/cam_cp -ldflags "-X main.revision=${version} -s -w"
 
