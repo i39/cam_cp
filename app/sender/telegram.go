@@ -23,11 +23,15 @@ type Telegram struct {
 	ChatId int64
 }
 
-func NewTelegram(token string, chatId int64) *Telegram {
-	return &Telegram{
+func NewTelegram(token string, chatId int64) (t *Telegram, err error) {
+	if token == "" {
+		return nil, fmt.Errorf("empty token")
+	}
+	t = &Telegram{
 		Token:  token,
 		ChatId: chatId,
 	}
+	return t, nil
 }
 
 func (t *Telegram) Send(frames []frame.Frame) (err error) {
@@ -40,7 +44,9 @@ func (t *Telegram) Send(frames []frame.Frame) (err error) {
 			return err
 		}
 	}
-	err = t.sendMediaGroup(frames[i10*10 : i10*10+r10])
+	if r10 > 0 {
+		err = t.sendMediaGroup(frames[i10*10 : i10*10+r10])
+	}
 	if err != nil {
 		return err
 	}

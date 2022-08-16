@@ -41,6 +41,9 @@ func NewFtp(ip string, dir string, user string,
 }
 
 func (f *Ftp) Watch(ctx context.Context, frames chan<- []frame.Frame) error {
+	if frames == nil {
+		return fmt.Errorf("frames channel is nil")
+	}
 	for {
 		select {
 		case <-ctx.Done():

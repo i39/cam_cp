@@ -60,7 +60,7 @@ var opts struct {
 		} `group:"ftp" namespace:"ftp" env-namespace:"FTP"`
 		Telegram struct {
 			Token  string `long:"token" env:"TOKEN" default:"" description:"telegram token"`
-			ChatId string `long:"chat-id" env:"CHAT_ID" default:"" description:"telegram chat id"`
+			ChatId int64  `long:"chat-id" env:"CHAT_ID" default:"" description:"telegram chat id"`
 		} `group:"telegram" namespace:"telegram" env-namespace:"TELEGRAM"`
 	} `group:"out" namespace:"out" env-namespace:"OUT"`
 }
@@ -128,6 +128,13 @@ func run() error {
 	}
 	senders = append(senders, &fileSender)
 
+	var telegramSender sender.Sender
+	telegramSender, err = sender.NewTelegram(opts.Out.Telegram.Token, opts.Out.Telegram.ChatId)
+	if err != nil {
+		return err
+	}
+	senders = append(senders, &telegramSender)
+
 	var deepstackFilter filter.Filter
 	deepstackFilter, err = filter.NewDeepstack(opts.Filter.Deepstack.Url,
 		opts.Filter.Deepstack.ApiKey, opts.Filter.Deepstack.Labels,
@@ -137,7 +144,7 @@ func run() error {
 	}
 	filters = append(filters, &deepstackFilter)
 
-	var framesChan chan []frame.Frame
+	framesChan := make(chan []frame.Frame)
 
 	for _, wtc := range watchers {
 		//Run watcher
@@ -149,6 +156,9 @@ func run() error {
 			}
 		}(*wtc)
 
+	}
+	if err != nil {
+		return err
 	}
 
 	// Run main loop
@@ -173,7 +183,7 @@ func run() error {
 			return nil
 		}
 	}
-
+	//return nil
 }
 
 func setupLog(dbg bool) {
