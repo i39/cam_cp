@@ -7,8 +7,6 @@ REV=$(GITREV)-$(BRANCH)-$(shell date +%Y%m%d-%H:%M:%S)
 
 docker:
 	docker build -t i39.in/cam_cp:master --progress=plain .
-
-
 build: info
 	- cd app && GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build -ldflags "-X main.revision=$(REV) -s -w" -o ../dist/detect_bot
 

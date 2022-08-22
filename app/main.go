@@ -19,7 +19,6 @@ var opts struct {
 	Dbg bool `long:"dbg" env:"DEBUG" description:"debug mode"`
 	In  struct {
 		Ftp struct {
-			Enabled       bool          `long:"enabled" env:"ENABLED"  description:"enable ftp watcher"`
 			Ip            string        `long:"ip" env:"IP" default:"127.0.0.1" description:"ip address of ftp server"`
 			User          string        `long:"user" env:"USER" default:"anonymous" description:"user name"`
 			Password      string        `long:"password" env:"PASSWORD" default:"" description:"user password"`
@@ -37,7 +36,6 @@ var opts struct {
 	} `group:"in" namespace:"in" env-namespace:"IN"`
 	Filter struct {
 		Deepstack struct {
-			Enabled    bool    `long:"enabled" env:"ENABLED"  description:"enable deepstack filter"`
 			Url        string  `long:"url" env:"URL" default:"http://localhost:8080" description:"deepstack url"`
 			ApiKey     string  `long:"api-key" env:"API_KEY" default:"" description:"deepstack api key"`
 			Confidence float64 `long:"confidence" env:"CONFIDENCE" default:"0.5" description:"confidence level"`
@@ -46,8 +44,7 @@ var opts struct {
 	} `group:"filter" namespace:"filter" env-namespace:"FILTER"`
 	Out struct {
 		File struct {
-			Enabled bool   `long:"enabled" env:"ENABLED"  description:"enable file sender"`
-			Dir     string `long:"dir" env:"DIR" default:"/tmp" description:"file directory for saving"`
+			Dir string `long:"dir" env:"DIR" default:"/tmp" description:"file directory for saving"`
 		} `group:"file" namespace:"file" env-namespace:"FILE"`
 		Http struct {
 			Url string `long:"url" env:"URL" default:"http://localhost:8080" description:"http url"`
