@@ -6,21 +6,21 @@ GoCam is an open-source project written in Go that aims to provide an easy-to-us
 
 To install GoCam, you should first install Go on your system. Then, you can clone the repository:
 
-'''
+```bash
 	git clone https://github.com/<username>/GoCam.git
-'''
+```
 
 Next, you should build the project by running:
 
-'''
+```bash
 	make docker
-'''
+```
 
 For using deppstack or CPU based filter, or
 
-'''
+```bash
 	make docker_yolo_gpu
-'''
+```
 
 for using GPU based Yolo detection filter
 
@@ -28,7 +28,7 @@ for using GPU based Yolo detection filter
 
 GoCam can be configured with flags or environment wariables, that specifies the input, filter, and output parameters. Here is an example of docker-compose.yml:
 
-'''
+```dockerfile
 	services:
 	  cam_cp:
 	    image: i39.in/cam_cp_gpu:master
@@ -67,8 +67,7 @@ GoCam can be configured with flags or environment wariables, that specifies the 
 	      - OUT_EMAIL_TO=some_camera@some_host.local
 	      - OUT_EMAIL_SUBJECT=Alarm motion
 	      - DEBUG=true
-
-'''
+```
 
 You can customize the file to specify the input, filter, and output methods that you want to use. Once you have created the configuration file, you can run GoCam using the following command:
 
