@@ -23,18 +23,18 @@ type Telegram struct {
 	ChatId int64
 }
 
-func NewTelegram(token string, chatId int64) (t *Telegram, err error) {
+func NewTelegram(token string, chatId int64) (t Telegram, err error) {
 	if token == "" {
-		return nil, fmt.Errorf("empty token")
+		return t, fmt.Errorf("empty token")
 	}
-	t = &Telegram{
+	t = Telegram{
 		Token:  token,
 		ChatId: chatId,
 	}
 	return t, nil
 }
 
-func (t *Telegram) Send(frames []frame.Frame) (err error) {
+func (t Telegram) Send(frames []frame.Frame) (err error) {
 	i10 := len(frames) / 10
 	r10 := len(frames) % 10
 	for i := 0; i < i10; i++ {
@@ -54,7 +54,7 @@ func (t *Telegram) Send(frames []frame.Frame) (err error) {
 }
 
 // sendMediaGroup send a group of photos or videos as an album.
-func (t *Telegram) sendMediaGroup(fr []frame.Frame) (err error) {
+func (t Telegram) sendMediaGroup(fr []frame.Frame) (err error) {
 	var (
 		cnt   []http_utils.Content
 		im    []inputMediaPhoto

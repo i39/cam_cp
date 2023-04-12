@@ -5,8 +5,9 @@ import (
 	"cam_cp/app/http_utils"
 	"encoding/json"
 	"fmt"
-	log "github.com/go-pkgz/lgr"
 	"strings"
+
+	log "github.com/go-pkgz/lgr"
 )
 
 type Deepstack struct {
@@ -31,16 +32,17 @@ type OdResponse struct {
 	Predictions []Predictions `json:"predictions"`
 }
 
-func NewDeepstack(url, apiKey string, labels string, confidence float64) (d *Deepstack, err error) {
+func NewDeepstack(url, apiKey string, labels string, confidence float64) (d Deepstack, err error) {
 	lbs := strings.Split(labels, ",")
-	d = &Deepstack{Url: url, ApiKey: apiKey,
+	d = Deepstack{Url: url, ApiKey: apiKey,
 		Labels: lbs, Confidence: confidence,
 	}
 	return d, nil
 }
 
-func (f *Deepstack) Filter(inFrames []frame.Frame) (outFrames []frame.Frame) {
+func (f Deepstack) Filter(inFrames []frame.Frame) (outFrames []frame.Frame) {
 
+nextFrame:
 	for _, fr := range inFrames {
 		predictions, err := f.detect(fr)
 		if err != nil {
@@ -49,8 +51,10 @@ func (f *Deepstack) Filter(inFrames []frame.Frame) (outFrames []frame.Frame) {
 		}
 		for _, p := range predictions {
 			for _, l := range f.Labels {
-				if p.Label == l && p.Confidence > f.Confidence {
+				if p.Label == l && p.Confidence >= f.Confidence {
 					outFrames = append(outFrames, fr)
+					//go to next frame if found any labeled object
+					continue nextFrame
 				}
 			}
 		}
@@ -59,7 +63,7 @@ func (f *Deepstack) Filter(inFrames []frame.Frame) (outFrames []frame.Frame) {
 	return outFrames
 }
 
-func (f *Deepstack) detect(inFrame frame.Frame) (pr []Predictions, err error) {
+func (f Deepstack) detect(inFrame frame.Frame) (pr []Predictions, err error) {
 	var cnt = http_utils.Content{Fname: inFrame.Name, Ftype: "image", Fdata: inFrame.Data}
 	var dsRes OdResponse
 	res, err := http_utils.SendPostRequest(f.Url, cnt)
@@ -76,4 +80,8 @@ func (f *Deepstack) detect(inFrame frame.Frame) (pr []Predictions, err error) {
 	}
 	pr = dsRes.Predictions
 	return pr, nil
+}
+
+func (f Deepstack) Close() {
+	//nothing to close
 }

@@ -7,8 +7,10 @@ REV=$(GITREV)-$(BRANCH)-$(shell date +%Y%m%d-%H:%M:%S)
 
 docker:
 	docker build -t i39.in/cam_cp:master --progress=plain .
+docker_yolo_gpu:
+	docker build -t i39.in/cam_cp_gpu:master -f Darknet.dockerfile --progress=plain .
 build: info
-	- cd app &&  GOARCH=amd64 CGO_ENABLED=0 go build -ldflags "-X main.revision=$(REV) -s -w" -o ../dist/detect_bot
+	- cd app &&  GOARCH=amd64  go build  -ldflags "-X main.revision=$(REV) -s -w " -o ../dist/cam_cp
 
 race_test:
 	cd app && go test -v -race -mod=vendor -timeout=120s -count 1 ./...

@@ -4,7 +4,7 @@ package sender
 
 import (
 	"bytes"
-	"cam_cp/app/watcher"
+	"cam_cp/app/frame"
 	"encoding/base64"
 	"image"
 	"image/jpeg"
@@ -14,7 +14,7 @@ import (
 	"testing"
 )
 
-//Converts pre-existing base64 data (found in example of https://golang.org/pkg/image/#Decode) to test.png
+// Converts pre-existing base64 data (found in example of https://golang.org/pkg/image/#Decode) to test.png
 func base64toPng() ([]byte, error) {
 	const data = `
 /9j/4AAQSkZJRgABAQIAHAAcAAD/2wBDABALDA4MChAODQ4SERATGCgaGBYWGDEjJR0oOjM9PDkzODdA
@@ -92,7 +92,7 @@ ubeK6t3gnXdG4wwziiii/UTKMOg6dbzJLFE4dSCP3rEdeOM8805tDsGMvySgSsS6rM6gk9eAcUUVftZt
 
 }
 
-func TestSend(t *testing.T) {
+func TestSendTelegram(t *testing.T) {
 
 	var (
 		token       = os.Getenv("TG_TOKEN")
@@ -112,7 +112,7 @@ func TestSend(t *testing.T) {
 		t.Error(err)
 	}
 
-	fl := []watcher.ExData{
+	fl := []frame.Frame{
 		{
 			Name: "/test2/test3/test3.png",
 			Data: data,
@@ -127,7 +127,7 @@ func TestSend(t *testing.T) {
 			Data: data,
 		},
 	}
-	err = tg.send(fl)
+	err = tg.Send(fl)
 	if err != nil {
 		t.Error(err)
 	}

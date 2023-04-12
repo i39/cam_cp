@@ -6,8 +6,9 @@ import (
 	"fmt"
 	log "github.com/go-pkgz/lgr"
 	"github.com/jlaffaye/ftp"
-	"io/ioutil"
+	"io"
 	"net"
+	"strconv"
 	"time"
 )
 
@@ -20,27 +21,26 @@ type Ftp struct {
 }
 
 func NewFtp(ip string, dir string, user string,
-	password string, checkInterval time.Duration) (f *Ftp, err error) {
+	password string, checkInterval time.Duration) (f Ftp, err error) {
 
 	if r := net.ParseIP(ip); r == nil {
-		return nil, fmt.Errorf("invalid ip: %s", ip)
+		return f, fmt.Errorf("invalid ip: %s", ip)
 	}
 
 	if i := last(ip, ':'); i < 0 {
 		ip += ":21"
 	}
 
-	f = &Ftp{
+	return Ftp{
 		Dir:           dir,
 		Ip:            ip,
 		User:          user,
 		Password:      password,
 		CheckInterval: checkInterval,
-	}
-	return f, nil
+	}, nil
 }
 
-func (f *Ftp) Watch(ctx context.Context, frames chan<- []frame.Frame) error {
+func (f Ftp) Watch(ctx context.Context, frames chan<- []frame.Frame) error {
 	if frames == nil {
 		return fmt.Errorf("frames channel is nil")
 	}
@@ -60,9 +60,8 @@ func (f *Ftp) Watch(ctx context.Context, frames chan<- []frame.Frame) error {
 	}
 }
 
-//walt thought ftp directory
-
-func (f *Ftp) walkFtp() (files []frame.Frame, err error) {
+// walkFtp walk thought ftp directory
+func (f Ftp) walkFtp() (files []frame.Frame, err error) {
 	var e *ftp.Entry
 	var r *ftp.Response
 
@@ -88,11 +87,14 @@ func (f *Ftp) walkFtp() (files []frame.Frame, err error) {
 				return files, err
 			}
 			var b []byte
-			b, err = ioutil.ReadAll(r)
+			b, err = io.ReadAll(r)
 			if err != nil {
 				return files, err
 			}
-			files = append(files, frame.Frame{Name: w.Path(), Data: b})
+			timeStamp := time.Now().UTC().UnixNano()
+			nameFromTimeStamp := strconv.FormatInt(timeStamp, 10) + ".jpg"
+			//files = append(files, frame.Frame{Name: w.Path(), Data: b})
+			files = append(files, frame.Frame{Name: nameFromTimeStamp, Data: b, Timestamp: timeStamp})
 			err = r.Close()
 			if err != nil {
 				return files, err

@@ -6,4 +6,5 @@ import (
 
 type Filter interface {
 	Filter(inFrames []frame.Frame) (outFrames []frame.Frame)
+	Close()
 }

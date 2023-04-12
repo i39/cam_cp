@@ -3,7 +3,7 @@ package sender
 import (
 	"cam_cp/app/frame"
 	"errors"
-	"log"
+	log "github.com/go-pkgz/lgr"
 	"os"
 	"path/filepath"
 )
@@ -12,7 +12,7 @@ type File struct {
 	Dir string
 }
 
-func NewFile(dir string) (f *File, err error) {
+func NewFile(dir string) (f File, err error) {
 	//check if directory exist, if not create it
 	if _, err = os.Stat(dir); errors.Is(err, os.ErrNotExist) {
 		err = os.MkdirAll(dir, 0755)
@@ -20,13 +20,12 @@ func NewFile(dir string) (f *File, err error) {
 			return f, err
 		}
 	}
-	f = &File{Dir: dir}
 
-	return f, nil
+	return File{Dir: dir}, nil
 }
 
 // Send sends frames to file system
-func (f *File) Send(frames []frame.Frame) (err error) {
+func (f File) Send(frames []frame.Frame) (err error) {
 	for _, fr := range frames {
 		err := f.write(fr)
 		if err != nil {
@@ -36,17 +35,10 @@ func (f *File) Send(frames []frame.Frame) (err error) {
 	return nil
 }
 
-func (f *File) write(file frame.Frame) error {
+func (f File) write(file frame.Frame) error {
 	fBase := filepath.Base(file.Name)
-	fDir := filepath.Dir(f.Dir + file.Name)
-	//check if directory exist, if not create it
-	if _, err := os.Stat(fDir); errors.Is(err, os.ErrNotExist) {
-		err := os.MkdirAll(fDir, 0755)
-		if err != nil {
-			return err
-		}
-	}
-	newFile, err := os.Create(filepath.Join(fDir, fBase))
+	log.Printf("[DEBUG] save to file: %s", filepath.Join(f.Dir, fBase))
+	newFile, err := os.Create(filepath.Join(f.Dir, fBase))
 	if err != nil {
 		return err
 	}

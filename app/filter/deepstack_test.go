@@ -2,7 +2,7 @@ package filter
 
 import (
 	"bytes"
-	"cam_cp/app/watcher"
+	"cam_cp/app/frame"
 	"encoding/base64"
 	"github.com/stretchr/testify/assert"
 	"image"
@@ -11,7 +11,7 @@ import (
 	"testing"
 )
 
-//Converts pre-existing base64 data (found in example of https://golang.org/pkg/image/#Decode) to test.png
+// Converts pre-existing base64 data (found in example of https://golang.org/pkg/image/#Decode) to test.png
 func base64toPng() ([]byte, error) {
 	const data = `
 /9j/4AAQSkZJRgABAQIAHAAcAAD/2wBDABALDA4MChAODQ4SERATGCgaGBYWGDEjJR0oOjM9PDkzODdA
@@ -131,13 +131,17 @@ func TestDeepstackDetect(t *testing.T) {
 		t.Error(err)
 	}
 
-	ds := NewDeepstack("http://192.168.97.21/v1/vision/detection", "")
-	ex := watcher.ExData{Name: "test", Data: data}
+	ds, err := NewDeepstack("http://192.168.97.200/v1/vision/detection", "",
+		"peson", 0.7)
+	if err != nil {
+		t.Error(err)
+	}
+	ex := frame.Frame{Name: "test", Data: data}
 	pr, err := ds.detect(ex)
 
 	if err != nil {
 		t.Error(err)
 	}
 
-	assert.Equal(t, pr, prediction, "expected %v, got %v", prediction, pr)
+	assert.Equal(t, prediction, pr, "expected %v, got %v", prediction, pr)
 }
