@@ -11,3 +11,5 @@ docker-compose-private.yml
 *.bak
 *.log
 .env
+*.a
+*.weights
