@@ -9,4 +9,5 @@ docker-compose-private.yml
 .idea
 *.gpg
 *.bak
+*.log
 .env
